@@ -1,20 +1,181 @@
-# Slender Man Oculus Quest
 
-Source code from Slender Man Replica : https://youtu.be/LihEW5a1Tjw
+# 👻 Slender Man VR
 
-flashlight : https://sketchfab.com/3d-models/horror-game-flashlight-download-game-ready-a8def4fb92ee4b3383726d053ff0f0e1
+## 📌 Introduction
+**Slender Man VR** is an immersive horror experience where players must navigate through eerie environments while being stalked by the enigmatic Slender Man. The game features a procedurally generated map, dynamic AI behavior, and a chilling audiovisual experience to create an unsettling atmosphere.
 
-Well : https://sketchfab.com/3d-models/old-well-df90dd8352d24af086407070aa362efa
+![image](https://github.com/user-attachments/assets/dc5cf700-be19-4c10-9071-e05ae9dc87f5)
 
-Campfire : https://sketchfab.com/3d-models/campfire-8593d3169d3a46d3a5747c615b6be977
+## 🎮 Features
+- 🎭 **Slender Man AI**: Dynamically adjusts its behavior based on player proximity and collected objectives.
+- 🌲 **Procedural Map Generation**: Ensures unique experiences in every playthrough.
+- 📜 **Collectible Pages**: Players must gather scattered notes while evading Slender Man.
+- 🚷 **Survival Mechanics**: Avoid direct eye contact and manage flashlight battery levels.
+- 🎵 **Immersive Audio Design**: Includes whispers, ambient noises, and Slender Man's static distortion.
+- 🎨 **VHS & Glitch Effects**: Enhances the psychological horror elements.
+- 🕹️ **VR Hand & Player Movement**: Supports smooth locomotion and hand interactions.
 
-Slender Man : https://sketchfab.com/3d-models/slender-man-slender-the-arrival-0d250c25826d4286bcee8dd8faf3c472
+---
 
-Truck : https://sketchfab.com/3d-models/gmc-sierra-work-truck-1fae2b50fbe14d2c98296a2560a38399
+## 🏗️ How It Works
+The game comprises various interactive elements, AI-driven behavior, and a fear-inducing atmosphere. Players use VR controls to move, interact, and survive against Slender Man.
 
-House : https://sketchfab.com/3d-models/house-cfaf9a6c3a304dd9948044f8a63e391f
+---
 
+### 👣 **Player Movement (Continuous Locomotion)**
+Handles movement and speed adjustments based on player actions.
 
-# License
+```csharp
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.XR.Interaction.Toolkit;
 
-https://creativecommons.org/licenses/by/4.0/
+[RequireComponent(typeof(ContinuousMoveProviderBase))]
+public class PlayerMovement : MonoBehaviour
+{
+    [SerializeField] InputActionReference sprintAction;
+    [SerializeField] ContinuousMoveProviderBase moveSystem;
+    [SerializeField] float sprintSpeed;
+    [SerializeField] float normalSpeed;
+
+    private void Awake()
+    {
+        if (!sprintAction) Debug.LogError("Sprint action not assigned!");
+        if (!moveSystem) moveSystem = GetComponent<ContinuousMoveProviderBase>();
+    }
+
+    void Update()
+    {
+        moveSystem.moveSpeed = sprintAction.action.ReadValue<float>() > 0 ? sprintSpeed : normalSpeed;
+    }
+}
+```
+
+---
+
+### 🕵️ **Slender Man AI Behavior**
+Slender Man follows the player, teleporting unpredictably while avoiding direct visibility.
+
+```csharp
+using UnityEngine;
+
+public class SlenderAI : MonoBehaviour
+{
+    [SerializeField] Transform player;
+    [SerializeField] float minTeleportDistance;
+    [SerializeField] float maxTeleportDistance;
+    [SerializeField] float detectionRadius;
+    [SerializeField] AudioClip staticSound;
+    [SerializeField] AudioSource audioSource;
+
+    private void Update()
+    {
+        float distance = Vector3.Distance(transform.position, player.position);
+        if (distance < detectionRadius)
+        {
+            TeleportAway();
+            audioSource.PlayOneShot(staticSound);
+        }
+    }
+
+    private void TeleportAway()
+    {
+        Vector3 randomOffset = Random.insideUnitSphere * Random.Range(minTeleportDistance, maxTeleportDistance);
+        randomOffset.y = 0;
+        transform.position = player.position + randomOffset;
+    }
+}
+```
+
+---
+
+### 📜 **Collectible Page System**
+Tracks player progress and triggers Slender Man’s aggression as more pages are collected.
+
+```csharp
+using UnityEngine;
+using System;
+
+public class PageCollector : MonoBehaviour
+{
+    public static event Action<int> PageCollected;
+    private int pagesCollected = 0;
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Page"))
+        {
+            pagesCollected++;
+            PageCollected?.Invoke(pagesCollected);
+            Destroy(other.gameObject);
+        }
+    }
+}
+```
+
+---
+
+### 🎵 **VHS Distortion Effect**
+Applies static interference when Slender Man is near.
+
+```csharp
+using UnityEngine;
+
+public class VHSFilter : MonoBehaviour
+{
+    [SerializeField] Material vhsMaterial;
+    [SerializeField] AudioSource staticNoise;
+    private bool isDistorted = false;
+
+    void Update()
+    {
+        if (Vector3.Distance(transform.position, SlenderMan.Instance.transform.position) < 10f && !isDistorted)
+        {
+            isDistorted = true;
+            vhsMaterial.SetFloat("_GlitchIntensity", 1.0f);
+            staticNoise.Play();
+        }
+        else if (Vector3.Distance(transform.position, SlenderMan.Instance.transform.position) > 10f && isDistorted)
+        {
+            isDistorted = false;
+            vhsMaterial.SetFloat("_GlitchIntensity", 0.0f);
+            staticNoise.Stop();
+        }
+    }
+}
+```
+
+---
+
+### 🔦 **Flashlight System**
+Simulates a battery-powered flashlight with limited usage.
+
+```csharp
+using UnityEngine;
+
+public class Flashlight : MonoBehaviour
+{
+    [SerializeField] Light flashlight;
+    [SerializeField] float batteryLife = 100f;
+    private bool isOn = true;
+
+    void Update()
+    {
+        if (Input.GetButtonDown("ToggleFlashlight"))
+        {
+            isOn = !isOn;
+            flashlight.enabled = isOn;
+        }
+        if (isOn)
+        {
+            batteryLife -= Time.deltaTime;
+            if (batteryLife <= 0) flashlight.enabled = false;
+        }
+    }
+}
+```
+
+---
+
+## 🎯 Conclusion
+**Slender Man VR** delivers an adrenaline-pumping horror experience with unpredictable AI, procedural level generation, and immersive audiovisual effects. Players must collect all pages while evading Slender Man’s relentless pursuit. Dare to survive the night? 👀🎮
