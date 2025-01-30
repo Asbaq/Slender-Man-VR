@@ -4,6 +4,10 @@
 ## 📌 Introduction
 **Slender Man VR** is an immersive horror experience where players must navigate through eerie environments while being stalked by the enigmatic Slender Man. The game features a procedurally generated map, dynamic AI behavior, and a chilling audiovisual experience to create an unsettling atmosphere.
 
+🔗 Video Trailer
+
+https://youtu.be/_1BsBJsM6us
+
 ![image](https://github.com/user-attachments/assets/dc5cf700-be19-4c10-9071-e05ae9dc87f5)
 
 ## 🎮 Features
